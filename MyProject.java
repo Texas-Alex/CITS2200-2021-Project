@@ -133,7 +133,7 @@ public class MyProject implements Project {
    * 
    * @return An array with the distance to the closest device for each query, or Integer.MAX_VALUE if none are reachable
    */
-public int[] closestInSubnet(int[][] adjlist, short[][] addrs, int src, short[][] queries) {
+  public int[] closestInSubnet(int[][] adjlist, short[][] addrs, int src, short[][] queries) {
     int deviceCount = adjlist.length;
     int[] hopsByQuery = new int[queries.length];
     Arrays.fill(hopsByQuery, Integer.MAX_VALUE);
@@ -208,7 +208,7 @@ public int[] closestInSubnet(int[][] adjlist, short[][] addrs, int src, short[][
 
     int[][] speedsMatrix = new int[deviceCount][deviceCount];
     for(int i = 0; i < adjlist.length; i++) {
-      for(int j = 0; j <adjlist[i].length; j++) {
+      for(int j = 0; j < adjlist[i].length; j++) {
         int index = adjlist[i][j];
         speedsMatrix[i][index] = speeds[i][j];
       }
@@ -238,7 +238,8 @@ public int[] closestInSubnet(int[][] adjlist, short[][] addrs, int src, short[][
         // that the flow rate between ``current`` and its adjacent devices ``i``
         // is less than the max flow rate through that same edge.
         for (int i = 0; i < deviceCount; i++) {
-          if (!visited[i] && speedsMatrix[current][i] > flow[current][i]) {
+          if (i != current && !visited[i] && !queue.contains(i)
+              && speedsMatrix[current][i] > flow[current][i]) {
             queue.add(i);
             visited[i] = true;
             parent[i] = current;
@@ -250,14 +251,14 @@ public int[] closestInSubnet(int[][] adjlist, short[][] addrs, int src, short[][
       if (!canFlow)
         break;
       
-      // Find new minimum speed by following the path the BFS took (reversed)
+      // Find new minimum speed by following the path the BFS took
       // i.e. from the destination to the source (excluding the source)
       int minSpeed = speedsMatrix[parent[dst]][dst] - flow[parent[dst]][dst];
       for (int i = dst; i != src; i = parent[i]) {
         minSpeed = Math.min(minSpeed, (speedsMatrix[parent[i]][i] - flow[parent[i]][i]));
       }
 
-      // Update flow values - following the same path as above
+      // Update flow values - forward and backward paths
       for (int i = dst; i != src; i = parent[i]) {
         flow[parent[i]][i] += minSpeed;
         flow[i][parent[i]] -= minSpeed;
@@ -265,7 +266,7 @@ public int[] closestInSubnet(int[][] adjlist, short[][] addrs, int src, short[][
 
     } while (canFlow);
 
-    // maxSpeed is the sum of all speeds from source to destination
+    // maxSpeed is the sum of all augmented speeds 
     int maxSpeed = 0;
     for (int i = 0; i < deviceCount; i++)
       maxSpeed += flow[src][i];
